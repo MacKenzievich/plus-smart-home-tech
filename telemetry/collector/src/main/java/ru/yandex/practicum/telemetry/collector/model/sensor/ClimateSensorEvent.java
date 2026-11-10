@@ -1,4 +1,4 @@
-package ru.collector.telemetry.practicum.yandex.model.sensor;
+package ru.yandex.practicum.telemetry.collector.model.sensor;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
