@@ -1,14 +1,15 @@
 package ru.yandex.practicum.telemetry.collector.handler;
 
 import lombok.RequiredArgsConstructor;
-import ru.yandex.practicum.telemetry.collector.model.sensor.SensorEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
+import ru.yandex.practicum.telemetry.collector.model.sensor.SensorEvent;
 
-
+@Slf4j
 @RequiredArgsConstructor
 public abstract class BaseSensorEventHandler<T extends SpecificRecordBase> implements SensorEventHandler {
 
@@ -36,6 +37,14 @@ public abstract class BaseSensorEventHandler<T extends SpecificRecordBase> imple
                 event.getHubId(),
                 eventAvro
         );
-        producer.send(record);
+
+        producer.send(record, (metadata, exception) -> {
+            if (exception != null) {
+                log.error("Ошибка при отправке события датчика id={} в топик {}", event.getId(), topic, exception);
+            } else {
+                log.debug("Событие датчика id={} успешно отправлено в топик {}, партиция {}, смещение {}",
+                        event.getId(), metadata.topic(), metadata.partition(), metadata.offset());
+            }
+        });
     }
 }
