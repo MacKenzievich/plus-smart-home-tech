@@ -14,12 +14,7 @@ import ru.yandex.practicum.kafka.telemetry.event.SensorStateAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SwitchSensorAvro;
 import ru.yandex.practicum.kafka.telemetry.event.TemperatureSensorAvro;
-import ru.yandex.practicum.model.Action;
-import ru.yandex.practicum.model.Condition;
-import ru.yandex.practicum.model.ConditionOperation;
-import ru.yandex.practicum.model.ConditionType;
-import ru.yandex.practicum.model.Scenario;
-import ru.yandex.practicum.model.Sensor;
+import ru.yandex.practicum.model.*;
 import ru.yandex.practicum.repository.ScenarioRepository;
 
 import java.time.Instant;
@@ -84,11 +79,11 @@ public class SnapshotAnalyzerService {
     }
 
     private boolean isTriggered(Scenario scenario, Map<String, SensorStateAvro> states) {
-        Map<Sensor, Condition> conditions = scenario.getConditions();
+        List<ScenarioCondition> conditions = scenario.getConditions();
         return conditions != null
                 && !conditions.isEmpty()
-                && conditions.entrySet().stream()
-                .allMatch(entry -> checkCondition(entry.getKey(), entry.getValue(), states));
+                && conditions.stream()
+                .allMatch(sc -> checkCondition(sc.getSensor(), sc.getCondition(), states));
     }
 
     private boolean checkCondition(Sensor sensor, Condition condition, Map<String, SensorStateAvro> states) {

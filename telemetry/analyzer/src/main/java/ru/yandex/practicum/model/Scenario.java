@@ -12,26 +12,24 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.MapKeyJoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Entity
-@Table(
-        name = "scenarios",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"hub_id", "name"})
-)
+@Table(name = "scenarios")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Scenario {
 
     @Id
@@ -41,21 +39,15 @@ public class Scenario {
     @Column(name = "hub_id", nullable = false)
     private String hubId;
 
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    @MapKeyJoinColumn(name = "sensor_id", referencedColumnName = "id")
-    @JoinTable(
-            name = "scenario_conditions",
-            joinColumns = @JoinColumn(name = "scenario_id"),
-            inverseJoinColumns = @JoinColumn(name = "condition_id")
-    )
+    @OneToMany(mappedBy = "scenario", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
-    private Map<Sensor, Condition> conditions = new HashMap<>();
+    private List<ScenarioCondition> conditions = new ArrayList<>();
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    @MapKeyJoinColumn(name = "sensor_id", referencedColumnName = "id")
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @MapKeyJoinColumn(name = "sensor_id")
     @JoinTable(
             name = "scenario_actions",
             joinColumns = @JoinColumn(name = "scenario_id"),
