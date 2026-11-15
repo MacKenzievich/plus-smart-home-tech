@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: analyzer
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/smart-home-telemetry
+    username: postgres
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  sql:
+    init:
+      mode: always
+
+grpc:
+  client:
+    hub-router:
+      address: 'static://localhost:59090'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
+analyzer:
+  kafka:
+    bootstrap-servers: localhost:9092
+    topics:
+      hubs: telemetry.hubs.v1
+      snapshots: telemetry.snapshots.v1
+    consumers:
+      hubs:
+        group-id: analyzer-hubs-group
+        auto-offset-reset: earliest
+        enable-auto-commit: true
+        key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value-deserializer: ru.yandex.practicum.deserializer.HubEventDeserializer
+      snapshots:
+        group-id: analyzer-snapshots-group
+        auto-offset-reset: earliest
+        enable-auto-commit: false
+        key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value-deserializer: ru.yandex.practicum.deserializer.SensorsSnapshotDeserializer
