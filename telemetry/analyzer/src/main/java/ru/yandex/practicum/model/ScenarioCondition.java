@@ -1,6 +1,5 @@
 package ru.yandex.practicum.model;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -24,8 +23,7 @@ import lombok.Setter;
 public class ScenarioCondition {
 
     @EmbeddedId
-    @Builder.Default
-    private ScenarioConditionId id = new ScenarioConditionId();
+    private ScenarioConditionId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("scenarioId")
@@ -37,7 +35,7 @@ public class ScenarioCondition {
     @JoinColumn(name = "sensor_id")
     private Sensor sensor;
 
-    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.EAGER)
     @MapsId("conditionId")
     @JoinColumn(name = "condition_id")
     private Condition condition;

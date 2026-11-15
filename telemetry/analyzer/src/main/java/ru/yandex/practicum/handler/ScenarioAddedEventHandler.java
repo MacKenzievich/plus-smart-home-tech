@@ -17,6 +17,7 @@ import ru.yandex.practicum.model.Scenario;
 import ru.yandex.practicum.model.ScenarioCondition;
 import ru.yandex.practicum.model.ScenarioConditionId;
 import ru.yandex.practicum.model.Sensor;
+import ru.yandex.practicum.repository.ConditionRepository;
 import ru.yandex.practicum.repository.ScenarioRepository;
 import ru.yandex.practicum.repository.SensorRepository;
 
@@ -36,6 +37,7 @@ public class ScenarioAddedEventHandler implements HubEventHandler {
 
     private final ScenarioRepository scenarioRepository;
     private final SensorRepository sensorRepository;
+    private final ConditionRepository conditionRepository;
 
     @Override
     public String getMessageType() {
@@ -53,13 +55,14 @@ public class ScenarioAddedEventHandler implements HubEventHandler {
         payload.getConditions().forEach(c -> sensorIds.add(c.getSensorId()));
         payload.getActions().forEach(a -> sensorIds.add(a.getSensorId()));
 
-        if (!sensorRepository.existsByIdInAndHubId(sensorIds, hubId)) {
+        Map<String, Sensor> sensorsMap = sensorRepository.findAllById(sensorIds).stream()
+                .filter(s -> hubId.equals(s.getHubId()))
+                .collect(Collectors.toMap(Sensor::getId, Function.identity()));
+
+        if (sensorsMap.size() != sensorIds.size()) {
             log.warn("Не все датчики для сценария '{}' найдены у хаба {}", scenarioName, hubId);
             return;
         }
-
-        Map<String, Sensor> sensorsMap = sensorRepository.findAllById(sensorIds).stream()
-                .collect(Collectors.toMap(Sensor::getId, Function.identity()));
 
         scenarioRepository.findByHubIdAndName(hubId, scenarioName)
                 .ifPresent(scenario -> {
@@ -81,6 +84,7 @@ public class ScenarioAddedEventHandler implements HubEventHandler {
                 .name(scenarioName)
                 .actions(actionsMap)
                 .build();
+        scenario = scenarioRepository.save(scenario);
 
         List<ScenarioCondition> scenarioConditions = new ArrayList<>();
         for (ScenarioConditionAvro condAvro : payload.getConditions()) {
@@ -89,16 +93,18 @@ public class ScenarioAddedEventHandler implements HubEventHandler {
                     .operation(ConditionOperation.valueOf(condAvro.getOperation().name()))
                     .value(mapConditionValue(condAvro.getValue()))
                     .build();
+            condition = conditionRepository.save(condition);
+
             Sensor sensor = sensorsMap.get(condAvro.getSensorId());
             scenarioConditions.add(ScenarioCondition.builder()
-                    .id(new ScenarioConditionId())
+                    .id(new ScenarioConditionId(scenario.getId(), sensor.getId(), condition.getId()))
                     .scenario(scenario)
                     .sensor(sensor)
                     .condition(condition)
                     .build());
         }
-        scenario.setConditions(scenarioConditions);
 
+        scenario.getConditions().addAll(scenarioConditions);
         scenarioRepository.save(scenario);
         log.info("Сохранён сценарий '{}' для хаба {}", scenarioName, hubId);
     }
